@@ -82,17 +82,19 @@
         
         <Button x:Name="cmdRun" Grid.Row="2" Content="Run Test" Width="Auto" Margin="5,10,5,5" Click="cmdRun_Click"/>
 
-
         <StatusBar Grid.Row="3">
-            <StatusBarItem HorizontalContentAlignment="Left">
-                <TextBlock>Progress:</TextBlock>
+
+            <StatusBarItem HorizontalContentAlignment="Right">
+                <TextBlock Name="lblElapsedTime">Elapsed Time: 00:00:00</TextBlock>
             </StatusBarItem>
+            
             <StatusBarItem HorizontalContentAlignment="Stretch">
                 <Grid>
                     <ProgressBar x:Name="pbProgress" Minimum="0" Maximum="100" Value="0"/>
                     <TextBlock Name="lblFileName" HorizontalAlignment="Center" VerticalAlignment="Center" Text="0%"/>
                 </Grid>
             </StatusBarItem>
+            
         </StatusBar>
     </Grid>
 </Window>

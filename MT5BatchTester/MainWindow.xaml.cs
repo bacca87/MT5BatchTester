@@ -1,25 +1,14 @@
 ﻿using IniParser;
 using IniParser.Model;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Threading;
 using Path = System.IO.Path;
 
 namespace MT5BatchTester
@@ -34,24 +23,33 @@ namespace MT5BatchTester
         private static readonly string DIR_EXPERT = "MQL5\\Experts";
         private static readonly string DIR_TESTER = "MQL5\\Profiles\\Tester";
 
-        private BackgroundWorker worker = null;
+        private BackgroundWorker _worker = null;
         private Cursor _previousCursor;
+        private DispatcherTimer _timer;
+        private DateTime _startTime;
 
-        private string CurrentFileName;
-        private bool _CancelBatch = true;
+        private string _currentFileName;
+        private bool _cancelBatch = true;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            worker = new BackgroundWorker();
-            worker.DoWork += Worker_DoWork;
-            worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            worker.WorkerReportsProgress = true;
-            worker.ProgressChanged += (object sender, ProgressChangedEventArgs e) => 
+            _worker = new BackgroundWorker();
+            _worker.DoWork += Worker_DoWork;
+            _worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
+            _worker.WorkerReportsProgress = true;
+            _worker.ProgressChanged += (object sender, ProgressChangedEventArgs e) => 
             { 
                 pbProgress.Value = e.ProgressPercentage;
-                lblFileName.Text = $"{e.ProgressPercentage}% - {CurrentFileName}";
+                lblFileName.Text = $"{e.ProgressPercentage}% - {_currentFileName}";
+            };
+
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromMilliseconds(500);
+            _timer.Tick += (object sender, EventArgs e) => 
+            { 
+                lblElapsedTime.Text = $"Elapsed Time: {DateTime.Now.Subtract(_startTime):hh\\:mm\\:ss}";
             };
 
             txtMT5InstallationFolder.Text = UserSettings.MT5InstallationFolder;
@@ -121,9 +119,9 @@ namespace MT5BatchTester
 
         private void cmdRun_Click(object sender, RoutedEventArgs e)
         {   
-            _CancelBatch = !_CancelBatch;
+            _cancelBatch = !_cancelBatch;
 
-            if (_CancelBatch)
+            if (_cancelBatch)
             {
                 grpFolders.IsEnabled = true;
                 grpSettings.IsEnabled = true;
@@ -138,8 +136,9 @@ namespace MT5BatchTester
             cmdRun.Content = "Cancel Test";
 
             pbProgress.Value = 0;
-            CurrentFileName = string.Empty;
+            _currentFileName = string.Empty;
             lblFileName.Text = "0%";
+            lblElapsedTime.Text = "Elapsed Time: 00:00:00";
 
             if (!CheckInputs())
                 return;
@@ -158,7 +157,7 @@ namespace MT5BatchTester
             _previousCursor = Mouse.OverrideCursor;
             Mouse.OverrideCursor = Cursors.Wait;
 
-            worker.RunWorkerAsync();
+            _worker.RunWorkerAsync();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -167,11 +166,12 @@ namespace MT5BatchTester
             cmdRun.Content = "Run Test";
             grpFolders.IsEnabled = true;
             grpSettings.IsEnabled = true;
+            _timer.Stop();
 
-            if (_CancelBatch)
+            if (_cancelBatch)
                 return;
             else
-                _CancelBatch = true; // Reset cancel flag
+                _cancelBatch = true; // Reset cancel flag
 
             pbProgress.Value = 100;
             lblFileName.Text = "100%";
@@ -184,6 +184,10 @@ namespace MT5BatchTester
         {
             try
             {
+                // Elapsed time calc
+                _startTime = DateTime.Now;
+                _timer.Start();
+
                 // Get all EA parameters files
                 string[] files = Directory.GetFiles(Path.Combine(UserSettings.MT5InstallationFolder, DIR_TESTER, UserSettings.ParametersFolder), "*.set");
 
@@ -191,17 +195,17 @@ namespace MT5BatchTester
                 {
                     try
                     {
-                        if (_CancelBatch)
+                        if (_cancelBatch)
                             return;
 
-                        CurrentFileName = Path.GetFileNameWithoutExtension(files[i]);
+                        _currentFileName = Path.GetFileNameWithoutExtension(files[i]);
                         string tempFileName = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
 
                         // Report update progress bar
-                        worker.ReportProgress((i * 100) / files.Length);
+                        _worker.ReportProgress((i * 100) / files.Length);
 
                         // Get symbol and period from file name
-                        string[] info = CurrentFileName.Split("-");
+                        string[] info = _currentFileName.Split("-");
                         string Symbol = info[0];
                         string Period = info[2];
 
@@ -213,13 +217,13 @@ namespace MT5BatchTester
                         IniData data = parser.ReadFile(tempFileName);
 
                         data["Tester"]["Expert"] = UserSettings.EAPath;
-                        data["Tester"]["ExpertParameters"] = Path.Combine(UserSettings.ParametersFolder, CurrentFileName + ".set");
+                        data["Tester"]["ExpertParameters"] = Path.Combine(UserSettings.ParametersFolder, _currentFileName + ".set");
                         data["Tester"]["Symbol"] = Symbol;
                         data["Tester"]["Period"] = Period;
                         data["Tester"]["Deposit"] = UserSettings.Deposit;
                         data["Tester"]["Leverage"] = UserSettings.Leverage;
                         data["Tester"]["Model"] = UserSettings.Model.ToString();
-                        data["Tester"]["Report"] = UserSettings.ReportsFolder;
+                        data["Tester"]["Report"] = Path.Combine(UserSettings.ReportsFolder, _currentFileName);
                         data["Tester"]["FromDate"] = DateTime.Today.AddMonths(-UserSettings.BacktestingPeriod).ToString("yyyy.MM.dd");
                         data["Tester"]["ToDate"] = DateTime.Today.AddDays(-1).ToString("yyyy.MM.dd");
 
@@ -233,7 +237,7 @@ namespace MT5BatchTester
                     }
                     catch(Exception ex)
                     {
-                        MessageBox.Show($"Error processing the file {CurrentFileName}\n {ex}", "Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Error processing the file {_currentFileName}\n {ex}", "Exception", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
