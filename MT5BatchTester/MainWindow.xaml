@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MT5BatchTester"
         mc:Ignorable="d"
+        Icon="resources/logo.ico"
         Name="winMain"
         Title="MT5 Batch Tester" Height="480" Width="500"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="ToolWindow"
-        ResizeMode="NoResize">
+        ResizeMode="CanMinimize">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

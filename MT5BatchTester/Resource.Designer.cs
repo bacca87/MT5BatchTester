@@ -66,14 +66,26 @@ namespace MT5BatchTester {
         ///;+------------------------------------------------------------------------------+
         ///[Tester]
         ///;--- The Expert Advisor is located in platform_data_directory\MQL5\Experts\
-        ///Expert=RobinHood\RobinHood
+        ///Expert=
         ///;--- The Expert Advisor parameters are available in platform_installatoin_directory\MQL5\Profiles\Tester\
-        ///ExpertParameters=..\..\Presets\EURUSD-BOLL-H1-1.set
-        ///;--- The  [stringa troncata]&quot;;.
+        ///ExpertParameters=
+        ///;--- The symbol for testing
+        ///Symbol=
+        ///;--- The timeframe for t [stringa troncata]&quot;;.
         /// </summary>
         internal static string default_ini {
             get {
                 return ResourceManager.GetString("default.ini", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Cerca una risorsa localizzata di tipo System.Drawing.Icon simile a (Icona).
+        /// </summary>
+        internal static System.Drawing.Icon logo {
+            get {
+                object obj = ResourceManager.GetObject("logo", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
             }
         }
     }
