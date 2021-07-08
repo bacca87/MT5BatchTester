@@ -119,6 +119,9 @@ namespace MT5BatchTester
 
         private void cmdRun_Click(object sender, RoutedEventArgs e)
         {
+            if (!CheckInputs())
+                return;
+
             if (!_cancelBatch && MessageBox.Show("Are you sure to cancel the test?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                 return;
 
@@ -137,7 +140,7 @@ namespace MT5BatchTester
                 // disable inputs
                 grpFolders.IsEnabled = false;
                 grpSettings.IsEnabled = false;
-            }   
+            }
 
             cmdRun.Content = "Cancel Test";
 
@@ -145,10 +148,7 @@ namespace MT5BatchTester
             _currentFileName = string.Empty;
             lblFileName.Text = "0%";
             lblElapsedTime.Text = "Elapsed Time: 00:00:00";
-
-            if (!CheckInputs())
-                return;
-
+            
             // Save settings
             UserSettings.MT5InstallationFolder = txtMT5InstallationFolder.Text.Trim();
             UserSettings.EAPath = txtEAPath.Text.Trim();
@@ -213,7 +213,7 @@ namespace MT5BatchTester
                         // Get symbol and period from file name
                         string[] info = _currentFileName.Split("-");
                         string Symbol = info[0];
-                        string Period = info[2];
+                        string Period = info[1];
 
                         // Create default ini file
                         File.WriteAllText(tempFileName, Resource.default_ini);
