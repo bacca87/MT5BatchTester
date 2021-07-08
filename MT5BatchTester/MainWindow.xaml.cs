@@ -118,17 +118,23 @@ namespace MT5BatchTester
         }
 
         private void cmdRun_Click(object sender, RoutedEventArgs e)
-        {   
+        {
+            if (!_cancelBatch && MessageBox.Show("Are you sure to cancel the test?", "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+                return;
+
+            // Toggle cancel batch
             _cancelBatch = !_cancelBatch;
 
             if (_cancelBatch)
             {
+                // Enable inputs and exit
                 grpFolders.IsEnabled = true;
                 grpSettings.IsEnabled = true;
                 return;
             }
             else
             {
+                // disable inputs
                 grpFolders.IsEnabled = false;
                 grpSettings.IsEnabled = false;
             }   

@@ -9,7 +9,8 @@
         Name="winMain"
         Title="MT5 Batch Tester" Height="480" Width="500"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanMinimize">
+        ResizeMode="CanMinimize"
+        Topmost="True">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
