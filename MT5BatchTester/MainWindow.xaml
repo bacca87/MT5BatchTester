@@ -17,6 +17,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <GroupBox Grid.Row="0" Name="grpFolders" Header="Folders" Margin="5,0,5,5">
@@ -82,8 +83,9 @@
         </GroupBox>
         
         <Button x:Name="cmdRun" Grid.Row="2" Content="Run Test" Width="Auto" Margin="5,10,5,5" Click="cmdRun_Click"/>
+        <Button x:Name="cmdShowResults" Grid.Row="3" Content="Show Results" Width="Auto" Margin="5,0,5,5" Click="cmdShowResults_Click"/>
 
-        <StatusBar Grid.Row="3">
+        <StatusBar Grid.Row="4">
 
             <StatusBarItem HorizontalContentAlignment="Right">
                 <TextBlock Name="lblElapsedTime">Elapsed Time: 00:00:00</TextBlock>

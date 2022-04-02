@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
@@ -190,6 +191,9 @@ namespace MT5BatchTester
         {
             try
             {
+                // Clean old results
+                Directory.GetFiles(Path.Combine(UserSettings.MT5InstallationFolder, UserSettings.ReportsFolder)).ToList().ForEach(File.Delete);
+
                 // Elapsed time calc
                 _startTime = DateTime.Now;
                 _timer.Start();
@@ -251,6 +255,12 @@ namespace MT5BatchTester
             {
                 MessageBox.Show($"Error getting parameters files!\n {ex}", "Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void cmdShowResults_Click(object sender, RoutedEventArgs e)
+        {
+            // Open reports folder
+            Process.Start("explorer.exe", Path.Combine(UserSettings.MT5InstallationFolder, UserSettings.ReportsFolder));
         }
     }
 }
