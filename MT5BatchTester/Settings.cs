@@ -26,12 +26,12 @@ namespace MT5BatchTester
             }
         }
 
-        public static string ParametersFolder
+        public static string PresetsFolder
         {
-            get => Settings.Default.ParametersFolder;
+            get => Settings.Default.PresetsFolder;
             set
             {
-                Settings.Default.ParametersFolder = value;
+                Settings.Default.PresetsFolder = value;
                 Settings.Default.Save();
             }
         }

@@ -40,8 +40,8 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="2">
-                    <Label Content="Expert Advisor parameters files folder (Relative to MQL5\Profiles\Tester\):"/>
-                    <TextBox x:Name="txtParametersFolder" Margin="5,0,5,0"></TextBox>
+                    <Label Content="Expert Advisor presets folder (Relative to MQL5\):"/>
+                    <TextBox x:Name="txtPresetsFolder" Margin="5,0,5,0"></TextBox>
                 </StackPanel>
 
                 <StackPanel Grid.Row="3">
@@ -83,7 +83,7 @@
         </GroupBox>
         
         <Button x:Name="cmdRun" Grid.Row="2" Content="Run Test" Width="Auto" Margin="5,10,5,5" Click="cmdRun_Click"/>
-        <Button x:Name="cmdShowResults" Grid.Row="3" Content="Show Results" Width="Auto" Margin="5,0,5,5" Click="cmdShowResults_Click"/>
+        <Button x:Name="cmdShowResults" Grid.Row="3" Content="Show Results" Width="Auto" Margin="5,0,5,5" Click="cmdShowResults_Click" IsEnabled="False"/>
 
         <StatusBar Grid.Row="4">
 

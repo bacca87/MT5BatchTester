@@ -5,6 +5,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
@@ -21,8 +23,8 @@ namespace MT5BatchTester
     {
         private static readonly string EXE_MT5 = "terminal64.exe";
         private static readonly string DIR_MT5_INST = "MetaTrader 5";
-        private static readonly string DIR_EXPERT = "MQL5\\Experts";
-        private static readonly string DIR_TESTER = "MQL5\\Profiles\\Tester";
+        private static readonly string DIR_MQL5 = "MQL5";
+        private static readonly string DIR_EXPERT = DIR_MQL5 + "\\Experts";        
 
         private BackgroundWorker _worker = null;
         private Cursor _previousCursor;
@@ -31,6 +33,7 @@ namespace MT5BatchTester
 
         private string _currentFileName;
         private bool _cancelBatch = true;
+        private string _mt5DataDir;
 
         public MainWindow()
         {
@@ -55,7 +58,7 @@ namespace MT5BatchTester
 
             txtMT5InstallationFolder.Text = UserSettings.MT5InstallationFolder;
             txtEAPath.Text = UserSettings.EAPath;
-            txtParametersFolder.Text = UserSettings.ParametersFolder;
+            txtPresetsFolder.Text = UserSettings.PresetsFolder;
             txtReportsFolder.Text = UserSettings.ReportsFolder;
 
             txtBacktestingPeriod.Text = UserSettings.BacktestingPeriod.ToString();
@@ -79,15 +82,15 @@ namespace MT5BatchTester
                 return false;
             }
 
-            if (txtEAPath.Text.Trim() == string.Empty || !File.Exists(Path.Combine(txtMT5InstallationFolder.Text.Trim(), DIR_EXPERT, txtEAPath.Text.Trim())))
+            if (txtEAPath.Text.Trim() == string.Empty || !File.Exists(Path.Combine(_mt5DataDir, DIR_EXPERT, txtEAPath.Text.Trim().TrimStart('\\'))))
             {
                 MessageBox.Show("Invalid Expert Advisor path!", "Invalid Parameter", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
 
-            if (txtParametersFolder.Text.Trim() == string.Empty || !Directory.Exists(Path.Combine(txtMT5InstallationFolder.Text.Trim(), DIR_TESTER, txtParametersFolder.Text.Trim())))
+            if (txtPresetsFolder.Text.Trim() == string.Empty || !Directory.Exists(Path.Combine(_mt5DataDir, DIR_MQL5, txtPresetsFolder.Text.Trim().TrimStart('\\'))))
             {
-                MessageBox.Show("Invalid Expert Advisor parameters files folder!", "Invalid Parameter", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Invalid Expert Advisor presets folder!", "Invalid Parameter", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
 
@@ -97,7 +100,7 @@ namespace MT5BatchTester
                 return false;
             }
 
-            if (txtReportsFolder.Text.Trim() == string.Empty || !Directory.Exists(Path.Combine(txtMT5InstallationFolder.Text.Trim(), txtReportsFolder.Text.Trim())))
+            if (txtReportsFolder.Text.Trim() == string.Empty || !Directory.Exists(Path.Combine(_mt5DataDir, txtReportsFolder.Text.Trim().TrimStart('\\'))))
             {
                 MessageBox.Show("Invalid reports output folder!", "Invalid Parameter", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
@@ -120,6 +123,10 @@ namespace MT5BatchTester
 
         private void cmdRun_Click(object sender, RoutedEventArgs e)
         {
+            cmdShowResults.IsEnabled = true;
+
+            _mt5DataDir = GetMT5DataDir();
+
             if (!CheckInputs())
                 return;
 
@@ -152,10 +159,10 @@ namespace MT5BatchTester
             
             // Save settings
             UserSettings.MT5InstallationFolder = txtMT5InstallationFolder.Text.Trim();
-            UserSettings.EAPath = txtEAPath.Text.Trim();
-            UserSettings.ParametersFolder = txtParametersFolder.Text.Trim();
+            UserSettings.EAPath = txtEAPath.Text.Trim().TrimStart('\\');
+            UserSettings.PresetsFolder = txtPresetsFolder.Text.Trim().TrimStart('\\');
             UserSettings.BacktestingPeriod = Convert.ToInt32(txtBacktestingPeriod.Text);
-            UserSettings.ReportsFolder = txtReportsFolder.Text.Trim();
+            UserSettings.ReportsFolder = txtReportsFolder.Text.Trim().TrimStart('\\');
             UserSettings.Deposit = txtDeposit.Text.Trim();
             UserSettings.Leverage = txtLeverage.Text.Trim();
             UserSettings.Model = cmbModel.SelectedIndex;
@@ -184,7 +191,7 @@ namespace MT5BatchTester
             lblFileName.Text = "100%";
 
             // Open reports folder
-            Process.Start("explorer.exe", Path.Combine(UserSettings.MT5InstallationFolder, UserSettings.ReportsFolder));
+            Process.Start("explorer.exe", Path.Combine(_mt5DataDir, UserSettings.ReportsFolder));
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
@@ -192,14 +199,14 @@ namespace MT5BatchTester
             try
             {
                 // Clean old results
-                Directory.GetFiles(Path.Combine(UserSettings.MT5InstallationFolder, UserSettings.ReportsFolder)).ToList().ForEach(File.Delete);
+                Directory.GetFiles(Path.Combine(_mt5DataDir, UserSettings.ReportsFolder)).ToList().ForEach(File.Delete);
 
                 // Elapsed time calc
                 _startTime = DateTime.Now;
                 _timer.Start();
 
                 // Get all EA parameters files
-                string[] files = Directory.GetFiles(Path.Combine(UserSettings.MT5InstallationFolder, DIR_TESTER, UserSettings.ParametersFolder), "*.set");
+                string[] files = Directory.GetFiles(Path.Combine(_mt5DataDir, DIR_MQL5, UserSettings.PresetsFolder), "*.set");
 
                 for (int i = 0; i < files.Length; i++)
                 {
@@ -227,7 +234,7 @@ namespace MT5BatchTester
                         IniData data = parser.ReadFile(tempFileName);
 
                         data["Tester"]["Expert"] = UserSettings.EAPath;
-                        data["Tester"]["ExpertParameters"] = Path.Combine(UserSettings.ParametersFolder, _currentFileName + ".set");
+                        data["Tester"]["ExpertParameters"] = Path.Combine(UserSettings.PresetsFolder, _currentFileName + ".set");
                         data["Tester"]["Symbol"] = Symbol;
                         data["Tester"]["Period"] = Period;
                         data["Tester"]["Deposit"] = UserSettings.Deposit;
@@ -260,7 +267,16 @@ namespace MT5BatchTester
         private void cmdShowResults_Click(object sender, RoutedEventArgs e)
         {
             // Open reports folder
-            Process.Start("explorer.exe", Path.Combine(UserSettings.MT5InstallationFolder, UserSettings.ReportsFolder));
+            Process.Start("explorer.exe", Path.Combine(_mt5DataDir, UserSettings.ReportsFolder));
+        }
+
+        private string GetMT5DataDir()
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                md5.ComputeHash(Encoding.Unicode.GetBytes(txtMT5InstallationFolder.Text.TrimEnd('\\').ToUpper()));
+                return Environment.ExpandEnvironmentVariables("%APPDATA%\\MetaQuotes\\Terminal\\" + string.Concat(md5.Hash.Select(x => x.ToString("X2"))));
+            }
         }
     }
 }

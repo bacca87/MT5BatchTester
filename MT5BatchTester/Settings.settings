@@ -8,7 +8,7 @@
     <Setting Name="EAPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="ParametersFolder" Type="System.String" Scope="User">
+    <Setting Name="PresetsFolder" Type="System.String" Scope="User">
       <Value Profile="(Default)">.</Value>
     </Setting>
     <Setting Name="BacktestingPeriod" Type="System.Int32" Scope="User">
